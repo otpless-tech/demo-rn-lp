@@ -1,0 +1,53 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application
+      android:name=".MainApplication"
+      android:label="@string/app_name"
+      android:icon="@mipmap/ic_launcher"
+      android:roundIcon="@mipmap/ic_launcher_round"
+      android:allowBackup="false"
+      android:theme="@style/AppTheme"
+      android:supportsRtl="true"
+      android:networkSecurityConfig="@xml/otpless_network_security_config">
+      <activity
+        android:name=".MainActivity"
+        android:label="@string/app_name"
+        android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize|uiMode"
+        android:launchMode="singleTop"
+        android:windowSoftInputMode="adjustResize"
+        android:exported="true">
+        <intent-filter>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent-filter>
+        
+        <!-- 
+        OTPless Deep Linking Configuration
+        
+        Step 1: Add intent filter to enable deep linking for OTPless authentication.
+        This allows the app to receive authentication responses from WhatsApp and other services.
+        
+        Important requirements:
+        - The scheme must be in format: "otpless.YOUR_APP_ID_LOWERCASE"
+        - Use your actual App ID from OTPless dashboard: https://otpless.com/dashboard/customer/dev-settings/apiKeys
+        - The host must be "otpless"
+        
+        Step 2: Network Security Config (already added to application tag above)
+        android:networkSecurityConfig="@xml/otpless_network_security_config"
+        This is required only if you are using the SNA (Secure Network Access) feature.
+        
+        Step 3: Activity configuration (already applied above)
+        - android:launchMode="singleTop" - Ensures proper handling of deep links
+        - android:exported="true" - Makes the activity accessible to external apps
+        -->
+        <intent-filter>
+          <action android:name="android.intent.action.VIEW" />
+          <category android:name="android.intent.category.DEFAULT" />
+          <category android:name="android.intent.category.BROWSABLE" />
+          <data android:host="otpless" android:scheme="otpless.h7a18mqgf2dlzy7pijrq" />
+        </intent-filter>
+      </activity>
+    </application>
+</manifest>
