@@ -1,9 +1,3 @@
-# OTPless Integration Demo for React Native
-
-<p align="center">
-  <img src="./assets/zepto-logo.svg" alt="Zepto Logo" width="250" />
-</p>
-
 ## Overview
 
 OTPless is a mobile login SDK purpose-built to help Zepto drive the highest possible authentication success rates—without friction, latency, or user drop-offs. This demo showcases the seamless integration of OTPless authentication into a React Native application with a Zepto-styled UI.
@@ -339,14 +333,36 @@ For iOS, you may need to allow arbitrary loads for local development in your Inf
 ```xml
 <key>NSAppTransportSecurity</key>
 <dict>
-  <key>NSAllowsLocalNetworking</key>
+  <key>NSAllowsArbitraryLoads</key>
   <true/>
   <key>NSExceptionDomains</key>
   <dict>
+    <key>80.in.safr.sekuramobile.com</key>
+    <dict>
+      <key>NSIncludesSubdomains</key>
+      <true/>
+      <key>NSTemporaryExceptionAllowsInsecureHTTPLoads</key>
+      <true/>
+      <key>NSTemporaryExceptionMinimumTLSVersion</key>
+      <string>TLSv1.1</string>
+    </dict>
+    <key>partnerapi.jio.com</key>
+    <dict>
+      <key>NSIncludesSubdomains</key>
+      <true/>
+      <key>NSTemporaryExceptionAllowsInsecureHTTPLoads</key>
+      <true/>
+      <key>NSTemporaryExceptionMinimumTLSVersion</key>
+      <string>TLSv1.1</string>
+    </dict>
     <key>localhost</key>
     <dict>
-      <key>NSExceptionAllowsInsecureHTTPLoads</key>
+      <key>NSIncludesSubdomains</key>
       <true/>
+      <key>NSTemporaryExceptionAllowsInsecureHTTPLoads</key>
+      <true/>
+      <key>NSTemporaryExceptionMinimumTLSVersion</key>
+      <string>TLSv1.1</string>
     </dict>
   </dict>
 </dict>
@@ -389,15 +405,13 @@ npx react-native run-android
 
 ## Resources
 
-- [OTPless Documentation](https://docs.otpless.com/)
-- [React Native Documentation](https://reactnative.dev/docs/getting-started)
-- [Deep Linking in React Native](https://reactnative.dev/docs/linking)
+- [OTPless Documentation](https://otpless.com/docs/frontend-sdks/app-sdks/react-native/pre-built-ui)
 
 ## Support
 
 For issues specific to this demo, please create an issue in this repository.
 
-For OTPless-specific questions, contact support@otpless.com.
+For OTPless-specific questions, contact satyam@otpless.com.
 
 ## License
 
