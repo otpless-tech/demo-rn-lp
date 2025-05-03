@@ -15,23 +15,33 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+import 'react-native-gesture-handler';
 import ZeptoLogo from './assets/zepto-logo.svg';
 import ZeptoBg from './assets/zepto-bg.svg';
 import LinearGradient from 'react-native-linear-gradient';
-import Clipboard from '@react-native-clipboard/clipboard';
 import { OtplessReactNativeModule } from 'otpless-react-native-lp';
+import VerificationSuccessScreen from './VerificationSuccessScreen';
 
 const { width, height } = Dimensions.get('window');
 // Your unique APP_ID from OTPless dashboard - must match URL schemes in Info.plist and AndroidManifest.xml
 const APP_ID = 'H7A18MQGF2DLZY7PIJRQ';
 
-function App(): React.JSX.Element {
+export type RootStackParamList = {
+  PhoneNumber: undefined;
+  VerificationSuccess: {
+    token: string;
+    phone: string;
+  };
+};
+
+const Stack = createStackNavigator<RootStackParamList>();
+
+function PhoneNumberScreen({ navigation }: { navigation: any }) {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [token, setToken] = useState('');
-  const [showTick, setShowTick] = useState(false);
-  // Create and maintain a single instance of the OTPless module throughout component lifecycle
   const otplessModule = useRef(new OtplessReactNativeModule()).current;
 
   useEffect(() => {
@@ -53,17 +63,33 @@ function App(): React.JSX.Element {
   };
 
   const handleContinue = () => {
-    const phoneRegex = /^[6-9]\d{9}$/;
-    if (!phoneRegex.test(phoneNumber)) {
-      setError('Please enter a valid mobile number.');
-      return;
-    }
     setError('');
     setLoading(true);
-    setShowTick(false);
-    setToken('');
+    const baseRequest: any = {};
+    if (Platform.OS === 'ios') {
+      baseRequest.safariCustomizationOptions = {
+        preferredBarTintColor: '#5B0171',
+        dismissButtonStyle: 'cancel',
+      };
+    } else {
+      baseRequest.customTabParam = {
+        toolbarColor: '#5B0171',
+        navigationBarColor: '#5B0171',
+        navigationBarDividerColor: '#FF3269',
+        backgroundColor: '#5B0171',
+      };
+    }
+
+    const request = phoneNumber ? {
+      ...baseRequest,
+      "extraQueryParams": {
+        "phone": phoneNumber,
+        "countryCode": "91"
+      }
+    } : baseRequest;
+
     // Launch OTPless authentication flow (opens WhatsApp or shows authentication options)
-    otplessModule.start();
+    otplessModule.start(request);
   };
 
   /**
@@ -74,24 +100,18 @@ function App(): React.JSX.Element {
    *   - errorMessage: Details if authentication failed or was cancelled
    */
   const onResponse = (data: any) => {
+    //Alert.alert('onResponse', JSON.stringify(data));
     setLoading(false);
     if (data.token) {
-      // Authentication successful - received valid OTPless token
-      setShowTick(true);
-      setToken(data.token);
-      // In production: Send this token to your backend for verification
-      // Example: verifyToken(data.token).then(handleUserLogin);
+      navigation.navigate('VerificationSuccess', {
+        token: data.token,
+        phone: phoneNumber,
+      });
     } else {
-      // Authentication failed or was cancelled by user
-      setShowTick(false);
-      setToken('');
-      Alert.alert('OTPless Error', data.errorMessage || 'Authentication failed.');
+      if (data.errorCode !== 10000) {
+        Alert.alert('OTPless Error', data.errorMessage || 'Authentication failed.');
+      }
     }
-  };
-
-  const handleCopyToken = () => {
-    Clipboard.setString(token);
-    Alert.alert('Copied', 'Token copied to clipboard!');
   };
 
   const handleTermsPress = () => {
@@ -143,7 +163,7 @@ function App(): React.JSX.Element {
                     if (error) setError('');
                   }}
                   maxLength={10}
-                  editable={!loading && !showTick}
+                  editable={!loading}
                 />
               </View>
               {/* Error message below input */}
@@ -161,28 +181,15 @@ function App(): React.JSX.Element {
                   onPress={handleContinue}
                   activeOpacity={0.8}
                   style={styles.continueButtonTouchable}
-                  disabled={loading || showTick}
+                  disabled={loading}
                 >
                   {loading ? (
                     <ActivityIndicator color="#fff" />
-                  ) : showTick ? (
-                    <Text style={styles.tick}>✔</Text>
                   ) : (
                     <Text style={styles.continueButtonText}>Continue</Text>
                   )}
                 </TouchableOpacity>
               </LinearGradient>
-              {/* Show token and copy option if available */}
-              {showTick && token ? (
-                <View style={styles.tokenContainer}>
-                  <Text style={styles.tokenLabel}>Token:</Text>
-                  <Text style={styles.tokenValue}>{token}</Text>
-                  <TouchableOpacity style={styles.copyButton} onPress={handleCopyToken}>
-                    <Text style={styles.copyButtonText}>Copy Token</Text>
-                  </TouchableOpacity>
-                  <Text style={styles.todoText}>TODO: Handle the token in your custom logic.</Text>
-                </View>
-              ) : null}
             </View>
             {/* Terms and Privacy */}
             <View style={styles.termsContainer}>
@@ -197,6 +204,29 @@ function App(): React.JSX.Element {
         </KeyboardAvoidingView>
       </SafeAreaView>
     </View>
+  );
+}
+
+export default function App() {
+  return (
+    <NavigationContainer>
+      <Stack.Navigator
+        initialRouteName="PhoneNumber"
+        screenOptions={{
+          headerShown: false,
+          cardStyle: { backgroundColor: '#4B0082' }
+        }}
+      >
+        <Stack.Screen
+          name="PhoneNumber"
+          component={PhoneNumberScreen}
+        />
+        <Stack.Screen
+          name="VerificationSuccess"
+          component={VerificationSuccessScreen}
+        />
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
 
@@ -299,49 +329,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.5,
   },
-  tick: {
-    color: '#4CAF50',
-    fontSize: 28,
-    fontWeight: 'bold',
-  },
-  tokenContainer: {
-    marginTop: 24,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    width: '100%',
-  },
-  tokenLabel: {
-    color: '#fff',
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  tokenValue: {
-    color: '#fff',
-    fontSize: 13,
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  copyButton: {
-    backgroundColor: '#FF7E5F',
-    borderRadius: 8,
-    paddingVertical: 6,
-    paddingHorizontal: 16,
-    marginBottom: 8,
-  },
-  copyButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
-  todoText: {
-    color: '#fff',
-    fontSize: 12,
-    marginTop: 8,
-    fontStyle: 'italic',
-    textAlign: 'center',
-  },
   termsContainer: {
     alignItems: 'center',
     marginTop: 20,
@@ -358,5 +345,3 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 });
-
-export default App;
